@@ -1,0 +1,32 @@
+pipeline {
+    agent any
+    environment {
+        //be sure to replace "willbla" with your own Docker Hub username
+        DOCKER_IMAGE_NAME = "devenv27/dotnet-kube"
+    }
+    stages {
+        stage('Build') {
+            steps {
+                echo 'Running build automation'
+                sh 'cd aspnetapp'
+                sh 'docker build -t aspnetapp .'
+                archiveArtifacts artifacts: 'dist/trainSchedule.zip'
+            }
+        }
+        
+        stage('Push Docker Image') {
+            when {
+                branch 'master'
+            }
+            steps {
+                script {
+                    docker.withRegistry('https://registry.hub.docker.com', 'dockerhub') {
+                        app.push("${env.BUILD_NUMBER}")
+                        app.push("latest")
+                    }
+                }
+            }
+        }
+        
+    }
+}
